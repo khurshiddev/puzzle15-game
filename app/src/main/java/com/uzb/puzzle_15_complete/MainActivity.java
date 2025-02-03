@@ -6,6 +6,7 @@ import static android.view.View.VISIBLE;
 
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +17,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
@@ -29,10 +32,11 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private AppCompatButton[][] buttons;
     private List<Integer> numbers;
-    private ImageButton imageButton;
     private TextView scoreText;
     private Chronometer chronometer;
+    private ImageButton imageButton;
     private Button restartButton;
+    private Button result;
     private View levelLayout;
     private LinearLayout container;
     private MediaPlayer sound1;
@@ -42,38 +46,79 @@ public class MainActivity extends AppCompatActivity {
     int emptyY = 0;
     int LEVEL = 4;
     int count;
+    LocalStorage localStorage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+//        findViewById(R.id.btnRating).setOnClickListener(v -> {
+//
+//        });
+//localStorage = LocalStorage.getInstance();
+//loadViews();
+//if(getIntent().getBooleanExtra(""))
+        buttons = new AppCompatButton[4][4];
 
         container = findViewById(R.id.container); // Bu qatorni qo'shish kerak!
         container.setVisibility(GONE);
+        localStorage = LocalStorage.getInstance();
 
-        levelLayout = findViewById(R.id.layoutMenu);
-        levelLayout.setVisibility(VISIBLE);
-
-        findViewById(R.id.btn4X4).setOnClickListener(v -> {
-            setLevel(4);
-        });
-        findViewById(R.id.btn5X5).setOnClickListener(v -> {
-            setLevel(5);
-        });
-        findViewById(R.id.btn6X6).setOnClickListener(v -> {
-            setLevel(6);
-        });
-        findViewById(R.id.btn7X7).setOnClickListener(v -> {
-            setLevel(7);
-        });
-
-
+        chronometer = findViewById(R.id.timeChronometer);
+        scoreText = findViewById(R.id.tvScore);
+        setLevel(4);
     }
+
+@Override
+protected void onSaveInstanceState(@NonNull Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putString("SCORE", scoreText.getText().toString());
+//    outState.putInt("score", Integer.parseInt(scoreTv.getText().toString()));
+    outState.putLong("time", chronometer.getBase());
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            sb.append(buttons[i][j].getText());
+            sb.append("#");
+        }
+    }
+    outState.putString("mat", sb.toString());
+}
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        scoreText.setText(savedInstanceState.getString("SCORE"));
+        chronometer.setBase(savedInstanceState.getLong("time"));
+        chronometer.start();
+        String[] s = savedInstanceState.getString("mat", "").split("#");
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                if (s[i * 4 + j].equals("0")) {
+                    buttons[i][j].setText("0");
+                    buttons[i][j].setVisibility(INVISIBLE);
+                    emptyX = i;
+                    emptyY = j;
+                } else {
+                    buttons[i][j].setVisibility(VISIBLE);
+                    buttons[i][j].setText(s[i * 4 + j]);
+                }
+            }
+        }
+    }
+
 
     private void setLevel(int level) {
         LEVEL = level;
-        levelLayout.setVisibility(GONE);
         container.setVisibility(VISIBLE);
+        if (scoreText == null) {
+            scoreText = findViewById(R.id.tvScore);
+        }
+
+        // Ensure chronometer is initialized
+        if (chronometer == null) {
+            chronometer = findViewById(R.id.timeChronometer);
+        }
         loadViews(); // barcha viewlarni topib olinadi
         loadData(); // barcha dastur boshlanishida kerak bo'ladigan datalarni yuklab olinadi
         loadDataToView();// datalarni endi viewga yuklaymiz
@@ -81,16 +126,15 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
     private void setActions() {
-
-
         imageButton.setOnClickListener(v -> {
             finish();
             sound1.start();
         });
         restartButton.setOnClickListener(v -> {
             restart();
-            sound2.start();
+            sound1.start();
 
         });
         chronometer.start();
@@ -109,20 +153,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadViews() {
+
         imageButton = findViewById(R.id.btnBack);
         scoreText = findViewById(R.id.tvScore);
         chronometer = findViewById(R.id.timeChronometer);
         restartButton = findViewById(R.id.btnRestart);
-        sound1 =MediaPlayer.create(this,R.raw.sound_1);
-        sound2 =MediaPlayer.create(this,R.raw.sound_2);
-
+        sound1 = MediaPlayer.create(this, R.raw.sound_1);
+        sound2 = MediaPlayer.create(this, R.raw.sound_2);
 
 //        container.removeAllViews();// buni bir ko'ramiz
 
-        buttons = new AppCompatButton[LEVEL][LEVEL];
-        for (int i = 0; i < LEVEL; i++) {
+        buttons = new AppCompatButton[4][4];
+        for (int i = 0; i < 4; i++) {
             LinearLayout row = (LinearLayout) LayoutInflater.from(this).inflate(R.layout.item_row, container, false);
-            for (int j = 0; j < LEVEL; j++) {
+            for (int j = 0; j < 4; j++) {
                 AppCompatButton button = (AppCompatButton) LayoutInflater.from(this).inflate(R.layout.item_button, row, false);
                 row.addView(button);
                 buttons[i][j] = button;
@@ -134,11 +178,11 @@ public class MainActivity extends AppCompatActivity {
     private void loadData() {// hamma datalarni shu yerda yuklab olamiz
         count = 0;
         numbers = new ArrayList<>(16);
-        for (int i = 0; i < LEVEL * LEVEL; i++) {
+        for (int i = 1; i < LEVEL * LEVEL; i++) {
             numbers.add(i);
         }
         setShuffleData();
-//        numbers.add(0); // bu har doim bo'sh katak past o'ng tomonda chiqishi uchun
+        numbers.add(0); // bu har doim bo'sh katak past o'ng tomonda chiqishi uchun
     }
 
     private void loadDataToView() {
@@ -169,12 +213,6 @@ public class MainActivity extends AppCompatActivity {
         loadData();
         loadDataToView();
     }
-//    private void startGame() {
-//        levelLayout.setVisibility(GONE);
-//        container.setVisibility(VISIBLE);
-//        loadData();
-//        loadDataToView();
-//    }
 
 
     private void checkCanMove(int x, int y) {
@@ -186,11 +224,11 @@ public class MainActivity extends AppCompatActivity {
             emptyX = x;
             emptyY = y;
             count++;
-            MediaPlayer mediaPlayer = MediaPlayer.create(this,R.raw.sound_2 );
+            MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.sound_1);
             SoftReference<MediaPlayer> softReference = new SoftReference<>(mediaPlayer);
             softReference.get().start();
             scoreText.setText(String.valueOf(count));
-            if (emptyX == LEVEL -1 && emptyY == LEVEL - 1) {
+            if (emptyX == LEVEL - 1 && emptyY == LEVEL - 1) {
                 if (gameOver()) {
                     Toast.makeText(MainActivity.this, "Win", Toast.LENGTH_SHORT).show();
                 }
@@ -201,14 +239,22 @@ public class MainActivity extends AppCompatActivity {
     private boolean gameOver() {
         for (int i = 0; i < LEVEL; i++) {
             for (int j = 0; j < LEVEL; j++) {
-                if ((i * LEVEL + j) == LEVEL * LEVEL -1) return true;
+                if ((i * LEVEL + j) == LEVEL * LEVEL - 1) {
+                    localStorage.setHistory(count);
+                    return true;
+                }
                 if (Integer.parseInt(buttons[i][j].getText().toString()) != (i * LEVEL + j + 1)) {
                     return false;
                 }
             }
         }
-        return true;
+        if (check()) {
+            Toast.makeText(MainActivity.this, "Win", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return false;
     }
+
 
     private boolean check() {
         int[][] puzzle = new int[LEVEL][LEVEL];

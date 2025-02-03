@@ -25,10 +25,17 @@ public class MenuActivity extends AppCompatActivity {
     findViewById(R.id.btnExit).setOnClickListener(v -> {
         finish();
     });
+
+    findViewById(R.id.btnRating).setOnClickListener(v -> {
+        Intent intent = new Intent(this, RatingActivity.class);
+        startActivity(intent);
+    });
     }
 
     public void clickPlay(View view) {
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
     }
+
+
 }
