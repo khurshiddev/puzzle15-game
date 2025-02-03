@@ -3,9 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    android:background="@drawable/menu_img"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/menu_img"
     tools:context=".MenuActivity">
 
 
@@ -17,18 +17,25 @@
 
         <Button
             android:id="@+id/btnPlay"
-            android:backgroundTint="#46035E"
             android:layout_width="120dp"
             android:layout_height="wrap_content"
+            android:backgroundTint="#46035E"
             android:onClick="clickPlay"
             android:text="Play" />
+
         <Button
             android:id="@+id/btnExit"
-            android:backgroundTint="#46035E"
             android:layout_width="120dp"
             android:layout_height="wrap_content"
+            android:backgroundTint="#46035E"
             android:text="Exit" />
 
+        <Button
+            android:id="@+id/btnRating"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#46035E"
+            android:text="Rating" />
 
 
     </LinearLayout>
